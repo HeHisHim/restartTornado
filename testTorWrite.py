@@ -14,6 +14,12 @@
 使用set_header(self, name: str, value: _HeaderTypes)可以改写header数据
 """
 
+"""
+关于set_default_headers
+该方法会在进入HTTP处理方法前先被调用来设置headers的默认值, 可重写该方法来预先设置默认的headers
+注意: 在HTTP处理方法中使用set_header()会覆盖在set_default_headers里面设置的同名header
+"""
+
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -25,10 +31,23 @@ from tornado.web import RequestHandler, MissingArgumentError
 define("port", default = 8000, type = int, help = "run server on the given port.")
 
 class InderHandler(RequestHandler):
+    def set_default_headers(self):
+        print("start set_default_headers")
+        self.set_header("Content-Type", "application/json; charset=UTF-8")
+        self.set_header("mykey", "myvalue") # 自定义headers
+        print("stop set_default_headers")
+
     def get(self):
+        print("start GET")
         student = {"name": "zhangsan", "age": 18, "gender": 1}
         self.write(json.dumps(student)) # Content-Type: text/html; charset=UTF-8
         # self.write(student) # Content-Type: application/json; charset=UTF-8
+        # self.set_header("mykey", "yourvalue") # 在此处会修改set_default_headers中同名的值
+        print("stop GET")
+        # start set_default_headers
+        # stop set_default_headers
+        # start GET
+        # stop GET
 
 
 if __name__ == "__main__":
