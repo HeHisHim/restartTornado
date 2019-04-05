@@ -27,13 +27,21 @@ class InderHandler(RequestHandler):
 
     def get(self):
         student = {"name": "zhangsan", "age": 18, "gender": 1}
-        self.set_status(199) # 手动填写404, 但能正常响应, 只是状态码为404
+        self.set_status(404) # 手动填写404, 但能正常响应, 只是状态码为404
         self.write(json.dumps(student))
+
+class LoginHandler(RequestHandler):
+    def get(self):
+        self.write('<form method="post"><input type="submit" value="登陆"></form>') # 在表单中设置post接口
+    
+    def post(self):
+        self.redirect("/") # post跳转进InderHandler
 
 if __name__ == "__main__":
     tornado.options.parse_command_line()
     app = tornado.web.Application([
-        (r"/", InderHandler)
+        (r"/", InderHandler),
+        (r"/login", LoginHandler),
     ], debug = True)
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
