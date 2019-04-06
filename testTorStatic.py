@@ -1,3 +1,15 @@
+"""
+static_path
+可以通过向tornado.web.Application类的构造函数传递一个名为static_path的参数告诉Tornado从文件系统的一个特定位置提供静态文件
+"""
+
+"""
+StaticFileHandler
+用 127.0.0.1/static/html/index.html 来访问页面不友好, 可以通过tornado.web.StaticFileHandler来自由映射静态文件与其访问路径url
+tornado.web.StaticFileHandler是Tornado内置的类, 专门用来提供静态资源文件的handler
+"""
+
+
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -20,7 +32,8 @@ if __name__ == "__main__":
         (r"/api/index", InderHandler),
         (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "statics/html"), "default_filename": "index.html"}),
     ], 
-    debug = True, 
+    debug = True,
+    # 使用os.path.join(跨平台)连接当前目录和静态文件目录
     static_path = os.path.join(current_path, "statics"))
 
     http_server = tornado.httpserver.HTTPServer(app)
