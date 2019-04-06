@@ -29,6 +29,9 @@ RequestHandler.set_header("X-XSS-Protection", 0)  0: 禁止XSS过滤 1: 启动XS
 
 {% autoescape None %}
 在指定页面中添加, 可以只关闭指定页面的转义, 不影响其他页面
+
+{% raw text%}
+采用原始格式渲染数据, 输出不被转义的原始格式
 """
 
 import tornado.web
