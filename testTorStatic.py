@@ -31,10 +31,11 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     app = tornado.web.Application([
         (r"/api/index", InderHandler),
-        (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "statics/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
+        (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "static/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
     ], 
     debug = True,
     # 使用os.path.join(跨平台)连接当前目录和静态文件目录
+    static_path = os.path.join(current_path, "static"))
 
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
