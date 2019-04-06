@@ -24,7 +24,7 @@
                 <a href="#"><img src="/static/images/home01.jpg"></a>
                 <div class="house-desc">
                     <div class="landlord-pic"><img src="/static/images/landlord01.jpg"></div>
-                    <div class="house-price">￥<span>{{house.get("price")}}</span>/晚</div>
+                    <div class="house-price">￥<span>{{fun_sum_of_price(house.get("price"))}}</span>/晚</div> <!--直接调用 fun_sum_of_price-->
                     <div class="house-intro">
                         <span class="house-title">宽窄巷子+160平大空间+文化保护区双地铁</span>
                         <em>整套出租 - 5分/6点评 - 北京市丰台区六里桥地铁</em>
