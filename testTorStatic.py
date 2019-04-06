@@ -35,7 +35,6 @@ if __name__ == "__main__":
     ], 
     debug = True,
     # 使用os.path.join(跨平台)连接当前目录和静态文件目录
-    static_path = os.path.join(current_path, "statics"))
 
     http_server = tornado.httpserver.HTTPServer(app)
     http_server.listen(options.port)
