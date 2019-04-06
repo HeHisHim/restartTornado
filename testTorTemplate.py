@@ -26,6 +26,9 @@ autoescape = None
 关闭自动转义, 全局生效, 不建议. 这会导致xss注入攻击
 
 RequestHandler.set_header("X-XSS-Protection", 0)  0: 禁止XSS过滤 1: 启动XSS过滤
+
+{% autoescape None %}
+在指定页面中添加, 可以只关闭指定页面的转义, 不影响其他页面
 """
 
 import tornado.web
@@ -61,7 +64,7 @@ if __name__ == "__main__":
         (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "static/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
     ], 
     debug = True,
-    autoescape = None, # 关闭全局自动转义
+    # autoescape = None, # 关闭全局自动转义
     static_path = os.path.join(current_path, "static"),
     template_path = os.path.join(current_path, "template"),)
 
