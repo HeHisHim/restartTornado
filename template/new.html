@@ -8,6 +8,6 @@
             <textarea name="text"></textarea>
             <input type="submit" value="提交">
         </form>
-        {% raw text %}
+        {{ escape(text) }} <!--转义text-->
     </body>
 </html>

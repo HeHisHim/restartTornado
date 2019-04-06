@@ -32,6 +32,10 @@ RequestHandler.set_header("X-XSS-Protection", 0)  0: 禁止XSS过滤 1: 启动XS
 
 {% raw text%}
 采用原始格式渲染数据, 输出不被转义的原始格式
+
+内置转义函数 escape()
+关闭自动转义后, 还可以使用escape()函数来对特定变量进行转义
+{{ escapte(text) }}
 """
 
 import tornado.web
@@ -67,7 +71,7 @@ if __name__ == "__main__":
         (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "static/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
     ], 
     debug = True,
-    # autoescape = None, # 关闭全局自动转义
+    autoescape = None, # 关闭全局自动转义
     static_path = os.path.join(current_path, "static"),
     template_path = os.path.join(current_path, "template"),)
 
