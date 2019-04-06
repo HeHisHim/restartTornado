@@ -7,8 +7,9 @@ static_path
 StaticFileHandler
 用 127.0.0.1/static/html/index.html 来访问页面不友好, 可以通过tornado.web.StaticFileHandler来自由映射静态文件与其访问路径url
 tornado.web.StaticFileHandler是Tornado内置的类, 专门用来提供静态资源文件的handler
+path: 用来指明提供静态文件的根路径, 并在此目录中寻找路由中用正则表达式提取的文件名
+default_filename: 用来指定访问路由中未指明文件名时, 默认提供的文件
 """
-
 
 import tornado.web
 import tornado.ioloop
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     tornado.options.parse_command_line()
     app = tornado.web.Application([
         (r"/api/index", InderHandler),
-        (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "statics/html"), "default_filename": "index.html"}),
+        (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "statics/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
     ], 
     debug = True,
     # 使用os.path.join(跨平台)连接当前目录和静态文件目录
