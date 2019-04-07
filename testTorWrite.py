@@ -15,6 +15,17 @@
 """
 
 """
+add_header(self, name: str, value: _HeaderTypes) -> None
+add_header与set_header的区别
+
+set_header会执行覆盖操作
+self._headers[name] = self._convert_header_value(value)
+
+add_header会执行添加操作, 不做覆盖
+self._headers.add(name, self._convert_header_value(value))
+"""
+
+"""
 关于set_default_headers
 该方法会在进入HTTP处理方法前先被调用来设置headers的默认值, 可重写该方法来预先设置默认的headers
 注意: 在HTTP处理方法中使用set_header()会覆盖在set_default_headers里面设置的同名header
@@ -35,6 +46,7 @@ class InderHandler(RequestHandler):
         print("start set_default_headers")
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.set_header("mykey", "myvalue") # 自定义headers
+        self.add_header("mykey", "youvalue")
         print("stop set_default_headers")
 
     def get(self):
