@@ -37,7 +37,7 @@ class IndexHandler(RequestHandler):
 
     def fetchData(self):
         with self.application.db.cursor() as cursor:
-            data = cursor.execute("update it_house_info set hi_user_id = 9 where hi_house_id = 30")
+            data = cursor.execute("update it_house_info set hi_user_id = %s where hi_house_id = %s", args = [9, 30])
             self.write(str(data))
             self.application.db.commit()
 
