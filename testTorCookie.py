@@ -10,6 +10,20 @@ def set_cookie(
     **kwargs: Any
 ) -> None
 """
+
+"""
+def get_cookie(self, name: str, default: str = None) -> Optional[str]
+获取名为name的cookie, 默认为 None
+"""
+
+"""
+def clear_cookie(self, name: str, path: str = "/", domain: str = None)
+删除名为name, 并同时匹配domain和path的cookie
+
+执行清理cookie操作后, 并不是立即删除浏览器的cookie, 而是给cookie值置为空, 并改变其有效期使其失效
+真正的删除cookie是由浏览器去清理
+"""
+
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -36,8 +50,11 @@ class Application(tornado.web.Application):
 
 class IndexHandler(RequestHandler):
     def get(self):
-        self.set_cookie("mycookie", "y")
-        # self.set_header("Set-Cookie", "mycookie=y") 相当于用set_header设置
+        if not self.get_cookie("mycookie"):
+            self.set_cookie("mycookie", "y")
+            # self.set_header("Set-Cookie", "mycookie=y") 相当于用set_header设置
+        else:
+            self.clear_cookie("mycookie")
         self.write("OK")
 
 if __name__ == "__main__":
