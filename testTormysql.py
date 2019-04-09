@@ -1,9 +1,15 @@
+"""
+数据库连接初始化
+tornado需要在应用启动时创建一个数据库连接实例, 供各个RequestHandler使用
+可以在构造Application的时候创建一个数据库实例, 并设置成Application的属性
+而RequestHandler可以通过self.application获取其属性, 进而操作数据库实例
+"""
+
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
 import tornado.options
 import json
-import tormysql
 import pymysql
 import os
 from tornado.options import options, define
@@ -23,16 +29,18 @@ class Application(tornado.web.Application):
             template_path = os.path.join(current_path, "template"),
         )
         tornado.web.Application.__init__(self, handlers = handles, **settings)
-
+        # 创建一个全局的mysql连接供Handler调用
         self.db = pymysql.connect("127.0.0.1", "root", "1231230", "itcast")
-        self.cursor = self.db.cursor()
 
 class IndexHandler(RequestHandler):
     def get(self):
-        rep = self.application.cursor.execute("select ui_name from it_user_info where ui_user_id = 1")
-        data = self.application.cursor.fetchone()
-        print(data)
-        self.write(data[0])
+        self.fetchData()
+
+    def fetchData(self):
+        with self.application.db.cursor() as cursor:
+            cursor.execute("select ui_name from it_user_info where ui_user_id = 1")
+            data = cursor.fetchone()
+            self.write(data[0])
 
 if __name__ == "__main__":
     current_path = os.path.dirname(__file__)
