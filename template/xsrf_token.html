@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试XSRF</title>
+</head>
+<body>
+    <form method="post">
+      {% module xsrf_form_html() %}
+      <input type="text" name="message"/>
+      <input type="submit" value="Post"/>
+    </form>
+</body>
+</html>
