@@ -4,7 +4,6 @@ tornado需要在应用启动时创建一个数据库连接实例, 供各个Reque
 可以在构造Application的时候创建一个数据库实例, 并设置成Application的属性
 而RequestHandler可以通过self.application获取其属性, 进而操作数据库实例
 """
-
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -38,9 +37,9 @@ class IndexHandler(RequestHandler):
 
     def fetchData(self):
         with self.application.db.cursor() as cursor:
-            cursor.execute("select ui_name from it_user_info where ui_user_id = 1")
-            data = cursor.fetchone()
-            self.write(data[0])
+            data = cursor.execute("update it_house_info set hi_user_id = 9 where hi_house_id = 30")
+            self.write(str(data))
+            self.application.db.commit()
 
 if __name__ == "__main__":
     current_path = os.path.dirname(__file__)
