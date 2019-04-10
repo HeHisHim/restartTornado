@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>测试XSRF</title>
+</head>
+<body>
+    <a href="javascript:;" onclick="xsrfPost()">发送POST请求</a>
+    <script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        //获取指定Cookie的函数
+        function getCookie(name) {
+            var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+            return r ? r[1] : undefined;
+        }
+        //AJAX发送post请求，表单格式数据
+        function xsrfPost() {
+            var xsrf = getCookie("_xsrf");
+            $.post("/", "_xsrf="+xsrf+"&key1=value1", function(data) {
+                alert("OK");
+            });
+        }
+    </script>
+</body>
+</html>
