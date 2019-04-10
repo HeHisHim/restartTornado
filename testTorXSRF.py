@@ -13,6 +13,14 @@ XSRF 跨站请求伪造
 <input type="hidden" name="_xsrf" value="2|746f1f8b|cf87bcd4923e5418549766b034d992cf|1554800413"/>
 并在cookie中新增了一个_xsrf键值对
 """
+
+"""
+RequestHandler.xsrf_token
+@property
+def xsrf_token(self) -> bytes
+该方法本质上是调用了self.set_cookie("_xsrf", self._xsrf_token, **cookie_kwargs)
+在cookie中写上_xsrf的值
+"""
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -21,7 +29,7 @@ import json
 import os
 import uuid, base64
 from tornado.options import options, define
-from tornado.web import RequestHandler, MissingArgumentError, StaticFileHandler
+from tornado.web import RequestHandler, MissingArgumentError
 
 define("port", default = 8000, type = int, help = "run server on the given port.")
 
@@ -29,7 +37,7 @@ class Application(tornado.web.Application):
     def __init__(self):
         handles = [
             (r"/", IndexHandler),
-            (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "static/html"), "default_filename": "index.html"}), # 未指明时默认提供index.html
+            (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "static/html")}),
         ]
         settings = dict(
             debug = True,
@@ -40,8 +48,15 @@ class Application(tornado.web.Application):
         )
         tornado.web.Application.__init__(self, handlers = handles, **settings)
 
+# 继承tornado.web.StaticFileHandler, 进入静态页面的时候就设置xsrf_token
+class StaticFileHandler(tornado.web.StaticFileHandler):
+    def __init__(self, *args, **kwargs):
+        tornado.web.StaticFileHandler.__init__(self, *args, **kwargs)
+        self.xsrf_token
+
 class IndexHandler(RequestHandler):
     def get(self):
+        # self.xsrf_token # 收到get请求就设置token
         self.render("xsrf_token.html")
 
     def post(self):
