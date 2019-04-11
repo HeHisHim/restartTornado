@@ -5,6 +5,7 @@
 </head>
 <body>
     <form method="post">
+        {% module xsrf_form_html() %}
       <input type="text" name="message"/>
       <input type="submit" value="Post"/>
     </form>

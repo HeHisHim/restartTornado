@@ -26,6 +26,7 @@ import tornado.httpserver
 import tornado.options
 import json
 import os
+import pymysql
 import uuid, base64
 from tornado.options import options, define
 from tornado.web import RequestHandler, MissingArgumentError, StaticFileHandler
@@ -49,17 +50,38 @@ class Application(tornado.web.Application):
         )
         tornado.web.Application.__init__(self, handlers = handles, **settings)
 
+        self.db = pymysql.connect("127.0.0.1", "root", "1231230", "itcast")
+
 class LoginHandler(RequestHandler):
     def get(self):
-        next_url = self.get_argument("next", "")
-        if next_url:
-            print("myNext: ", next_url)
-            self.redirect(next_url + "?f=login")
-        else:
-            self.write("Login Login")
+        # next_url = self.get_argument("next", "")
+        # if next_url:
+        #     print("myNext: ", next_url)
+        #     self.redirect(next_url + "?f=login")
+        # else:
+        #     self.write("Login Login")
+        self.render("xsrf_token.html")
 
     def post(self):
-        pass
+        val = self.get_argument("message", "") # 取post方法的数据
+        if val:
+            data = int(self.judge(val)[0])
+            if data:
+                next_url = self.get_argument("next", "") # 获取跳转前的路由, 有则跳转回之前的路由, 否则回主页
+                # 验证成功都将在路由后面 +f=login, 让对应路由get_current_user()检测已经成功验证
+                if next_url:
+                    self.redirect(next_url + "?f=login")
+                else:
+                    self.redirect("/" + "?f=login")
+            else:
+                self.redirect("/login")
+
+    def judge(self, id):
+        with self.application.db.cursor() as cursor:
+            sql = "select count(*) from it_user_info where ui_name = %s;"
+            cursor.execute(sql, id)
+            data = cursor.fetchone()
+            return data
 
 class IndexHandler(RequestHandler):
     def get_current_user(self): # 验证逻辑
