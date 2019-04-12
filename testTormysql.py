@@ -10,7 +10,10 @@ import tornado.httpserver
 import tornado.options
 import json
 import pymysql
+import tormysql
 import os
+import time
+import asyncio
 from tornado.options import options, define
 from tornado.web import RequestHandler, MissingArgumentError, StaticFileHandler
 
@@ -28,27 +31,84 @@ class Application(tornado.web.Application):
             template_path = os.path.join(current_path, "template"),
         )
         tornado.web.Application.__init__(self, handlers = handles, **settings)
-        # 创建一个全局的mysql连接供Handler调用
-        self.db = pymysql.connect("127.0.0.1", "root", "1231230", "itcast")
-        # self.db.cursor().execute()
+        # 创建一个全局的mysql连接供Handler调用 同步调用方式
+        # self.db = pymysql.connect("127.0.0.1", "root", "1231230", "itcast")
+        ## 异步调用方式
+        self.db = tormysql.ConnectionPool(
+               max_connections = 20, #max open connections
+                idle_seconds = 7200, #conntion idle timeout time, 0 is not timeout
+                wait_connection_timeout = 3, #wait connection timeout
+                host = "127.0.0.1",
+                user = "root",
+                passwd = "1231230",
+                db = "itcast",
+                charset = "utf8"
+        )
 
 class IndexHandler(RequestHandler):
-    def get(self):
-        self.set_header("Content-Type", "application/json")
-        id = self.get_argument("id")
-        data = self.fetchData(id)
-        data = json.dumps(data)
-        self.write(data)
+    # 改写成异步调用
+    async def get(self):
+        begin = time.time()
+        idList = self.get_arguments("id")
+        tasks = []
+        for id in idList:
+            tasks.append(asyncio.ensure_future(self.asyncFetchData(id)))
+        
+        for done in asyncio.as_completed(tasks):
+            data = await done
+            if data:
+                data = json.dumps(data[0][2])
+                self.write(data)
+                self.write("<br/>")
+                print(data)
+                print("now: flush")
+                self.flush()
+            else:
+                self.write("Error<br/>")
+                self.flush()
+        print("spend time: ", time.time() - begin)
 
-    def fetchData(self, id):
-        with self.application.db.cursor() as cursor:
-            sql = "select hi_name, hi_address, hi_price from it_house_info where hi_user_id = %s;"
-            cursor.execute(sql, id)
-            data = cursor.fetchall()
-            # self.write(str(data))
-            # self.application.db.commit()
-            # print(data)
-            return data
+    async def asyncFetchData(self, id):
+        datas = None
+        sql = "select hi_name, hi_address, hi_price from it_house_info where hi_user_id = %s;"
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(sql, id)
+                    datas = cursor.fetchall()
+            except Exception as e:
+                print(e)
+        return datas
+
+    ## 同步调用
+    # def get(self):
+    #     begin = time.time()
+    #     idList = self.get_arguments("id")
+    #     for id in idList:
+    #         data = self.fetchData(id)
+    #         if data:
+    #             data = json.dumps(data[0][2])
+    #             self.write(data)
+    #             self.write("<br/>")
+    #             print(data)
+    #             print("now: flush")
+    #             self.flush()
+    #         else:
+    #             self.write("Error<br/>")
+    #             self.flush()
+    #     print("spend time: ", time.time() - begin)
+
+
+    # def fetchData(self, id):
+    #     data = None
+    #     with self.application.db.cursor() as cursor:
+    #         sql = "select hi_name, hi_address, hi_price from it_house_info where hi_user_id = %s;"
+    #         try:
+    #             cursor.execute(sql, id)
+    #             data = cursor.fetchall()
+    #         except Exception as e:
+    #             print(e)
+    #         return data
 
 if __name__ == "__main__":
     current_path = os.path.dirname(__file__)
