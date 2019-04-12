@@ -12,7 +12,9 @@
     </div>
     <script src="{{static_url('js/jquery.min.js')}}"></script>
     <script type="text/javascript">
+    // 向目标url发起请求
         var ws = new WebSocket("ws://127.0.0.1:8000/chat")
+    // 收到信息时回调该函数, 写入文本
         ws.onmessage = function(message){
             $("#contents").append("<p>"+ message.data +"</p>");
         };
