@@ -51,6 +51,11 @@ class IndexHandler(RequestHandler):
         begin = time.time()
         idList = self.get_arguments("id")
         tasks = []
+
+        if not idList:
+            self.render("main.html")
+            return
+
         for id in idList:
             tasks.append(asyncio.ensure_future(self.asyncFetchData(id)))
         
