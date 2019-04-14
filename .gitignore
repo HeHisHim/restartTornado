@@ -2,5 +2,3 @@ venv*
 testmysql.py
 *.pyc
 */需求*
-*/logs/*
-*/config*
