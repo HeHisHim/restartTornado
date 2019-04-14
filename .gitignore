@@ -1,2 +1,4 @@
 venv*
 testmysql.py
+*.pyc
+*/需求*
