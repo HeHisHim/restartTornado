@@ -11,6 +11,8 @@ from handlers.application_init import Application
 define("port", type = int, default = 8000, help = "run server on the given port")
 
 def main():
+    options.logging = config.log_level
+    options.log_file_prefix = config.log_file
     tornado.options.parse_command_line()
     app = Application()
     http_server = tornado.httpserver.HTTPServer(app)

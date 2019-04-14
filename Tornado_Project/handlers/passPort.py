@@ -1,4 +1,5 @@
 from tornado.web import RequestHandler
+import logging
 
 class IndexHandler(RequestHandler):
     def get(self):
