@@ -4,6 +4,7 @@ import constants
 from  utils.captcha.image import ImageCaptcha
 import string
 import random
+import json
 characters = string.digits + string.ascii_lowercase
 
 # 验证码Handler
@@ -28,5 +29,36 @@ class ImageCodeHandler(RequestHandler):
             self.write("")
             return
         self.write(image.getvalue())
+
+
+class PhoneCodeHandler(RequestHandler):
+    def prepare(self):
+        if self.request.headers["Content-Type"].startswith("application/json"):
+            self.dataBody = json.loads(self.request.body)
+    def post(self):
+        # token = (
+        #     self.get_argument("_xsrf", None)
+        #     or self.request.headers.get("X-Xsrftoken")
+        #     or self.request.headers.get("X-Csrftoken")
+        # )
+        # if self.get_argument("_xsrf", None):
+        #     print("111")
+        #     token = self.get_argument("_xsrf", None)
+        # elif self.request.headers.get("X-Xsrftoken"):
+        #     print("2222")
+        #     token = self.request.headers.get("X-Xsrftoken")
+        # elif self.request.headers.get("X-Csrftoken"):
+        #     print("3333")
+        #     token = self.request.headers.get("X-Csrftoken")
+        # print("token: ", token)
+        """
+        判断验证码
+        成功: 发送短信 不成功: 返回错误信息
+        """
+        mobile = self.dataBody.get("mobile")
+        piccode_id = self.dataBody.get("piccode_id")
+        piccode = self.dataBody.get("piccode")
+
+        print(mobile, " ", piccode, " ", piccode_id)
 
         
