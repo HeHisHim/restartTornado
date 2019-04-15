@@ -1,0 +1,2 @@
+# 图片验证码有效时长(秒)
+IMAGE_CODE_EXPIRES_SECONDS = 120
