@@ -1,5 +1,6 @@
-from handlers import passPort
+from handlers import passPort, verifyCode
 
 handlers = [
-    (r"/", passPort.IndexHandler), 
+    (r"/", passPort.IndexHandler),
+    (r"/api/imagecode", verifyCode.ImageCodeHandler),
 ]
