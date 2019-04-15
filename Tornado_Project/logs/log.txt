@@ -1,0 +1,17 @@
+[D 190415 15:27:36 selector_events:65] Using selector: KqueueSelector
+[I 190415 15:27:41 web:2246] 200 GET / (::1) 8.90ms
+[W 190415 15:27:41 web:2246] 404 GET /api/check_login (::1) 1.71ms
+[W 190415 15:27:41 web:2246] 404 GET /api/house/index (::1) 0.67ms
+[I 190415 15:27:44 web:2246] 304 GET /register.html (::1) 1.11ms
+[I 190415 15:27:44 web:2246] 304 GET /static/js/ihome/register.js (::1) 1.38ms
+[I 190415 15:27:46 web:2246] 200 GET /api/imagecode?pcodeid=&codeid=85ccca77-d9c2-403b-84d6-fa96b67eae2b (::1) 2259.30ms
+[I 190415 15:29:08 autoreload:202] server.py modified; restarting server
+[D 190415 15:29:08 selector_events:65] Using selector: KqueueSelector
+[I 190415 15:29:09 autoreload:202] server.py modified; restarting server
+[D 190415 15:29:10 selector_events:65] Using selector: KqueueSelector
+[I 190415 15:29:11 autoreload:202] server.py modified; restarting server
+[D 190415 15:29:12 selector_events:65] Using selector: KqueueSelector
+[I 190415 15:29:13 autoreload:202] server.py modified; restarting server
+[D 190415 15:29:13 selector_events:65] Using selector: KqueueSelector
+[I 190415 15:29:15 autoreload:202] /Users/macbook/Documents/GitHub/restartTornado/Tornado_Project/config.py modified; restarting server
+[D 190415 15:29:15 selector_events:65] Using selector: KqueueSelector
