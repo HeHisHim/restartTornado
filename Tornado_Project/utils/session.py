@@ -6,7 +6,7 @@ import config
 class Session:
     def __init__(self, request_handler):
         self.request_handler = request_handler
-        self.session_id = self.request_handler.get_secure_cookid("session_id")
+        self.session_id = self.request_handler.get_secure_cookie("session_id")
         # 如果为空, 表示用户第一次登录, 生成一个新的session_id(全局唯一)
         if not self.session_id:
             self.session_id = uuid.uuid4().hex
