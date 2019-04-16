@@ -5,6 +5,7 @@ from  utils.captcha.image import ImageCaptcha
 from utils.response_code import RET
 import string
 import random
+import re
 import json
 CHARACTERS = string.digits + string.ascii_lowercase
 
@@ -40,21 +41,6 @@ class PhoneCodeHandler(RequestHandler):
                 self.dataBody = dict()
 
     def post(self):
-        # token = (
-        #     self.get_argument("_xsrf", None)
-        #     or self.request.headers.get("X-Xsrftoken")
-        #     or self.request.headers.get("X-Csrftoken")
-        # )
-        # if self.get_argument("_xsrf", None):
-        #     print("111")
-        #     token = self.get_argument("_xsrf", None)
-        # elif self.request.headers.get("X-Xsrftoken"):
-        #     print("2222")
-        #     token = self.request.headers.get("X-Xsrftoken")
-        # elif self.request.headers.get("X-Csrftoken"):
-        #     print("3333")
-        #     token = self.request.headers.get("X-Csrftoken")
-        # print("token: ", token)
         """
         判断验证码
         成功: 发送短信 不成功: 返回错误信息
@@ -64,6 +50,10 @@ class PhoneCodeHandler(RequestHandler):
         piccode = self.dataBody.get("piccode")
         if not all((mobile, piccode, piccode_id)):
             return self.write(dict(errno = RET.PARAMERR, errmsg = "参数不完整"))
+
+        # 正则判断手机号
+        if not re.match(r"1\d{10}", mobile):
+            return self.write(dict(errno = RET.PARAMERR, errmsg = "手机号错误"))
 
         try:
             imageTxT = self.application.redis.get("image_code_%s" % piccode_id).decode("utf8")
