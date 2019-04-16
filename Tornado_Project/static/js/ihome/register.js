@@ -171,9 +171,10 @@ $(document).ready(function() {
                 "X-XSRFTOKEN": getCookie("_xsrf"),
             },
             success: function (data) {
+                alert(JSON.stringify(data))
                 if ("0" == data.errno) {
                     location.href = "/";
-                } else if ("验证码过期" == data.errmsg || "验证码错误" == data.errmsg) {
+                } else {
                     $("#phone-code-err>span").html(data.errmsg);
                     $("#phone-code-err").show();
                 }
