@@ -13,6 +13,7 @@ class Session:
             self.session_id = uuid.uuid4().hex
         else:
             try:
+                self.session_id = self.session_id.decode("utf8")
                 data = self.request_handler.application.redis.get("sess_%s" % self.session_id)
             except Exception as e:
                 logging.error(e)
