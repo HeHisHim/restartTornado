@@ -8,6 +8,7 @@ import tornado.ioloop
 
 from tornado.web import RequestHandler
 from utils.response_code import RET
+from utils.session import Session
 
 class IndexHandler(RequestHandler):
     def get(self):
@@ -64,7 +65,6 @@ class RegisterHandler(RequestHandler):
             # 有数据的话, 代表该手机已经被注册
             if data:
                 return self.write(dict(errno = RET.PARAMERR, errmsg = "手机被注册了"))
-
         # 不能有空格
         if len(passwd.strip()) != len(passwd):
             return self.write(dict(errno = RET.PARAMERR, errmsg = "密码有空格"))
@@ -73,6 +73,25 @@ class RegisterHandler(RequestHandler):
         if len(passwd) != len(passwd2) or passwd != passwd2:
             return self.write(dict(errno = RET.PARAMERR, errmsg = "两次密码不一样"))
 
+        """
+        数据入库
+        """
+        save_task = []
+        save_task.append(asyncio.ensure_future(self.save_user_data(mobile, mobile, passwd)))
+        for done in asyncio.as_completed(save_task):
+            data = await done
+            if not data:
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql插入出错"))
+
+        """
+        设置session
+        """
+        try:
+            self.session = Session(self)
+            self.session.data["mobile"] = mobile
+            self.session.save()
+        except Exception as e:
+            logging.error(e)
         return self.write(dict(errno=RET.OK, errmsg = "注册成功"))
 
     async def get_user_phone(self, user_phone):
@@ -83,6 +102,64 @@ class RegisterHandler(RequestHandler):
                 async with conn.cursor() as cursor:
                     await cursor.execute(SQL, user_phone)
                     datas = cursor.fetchone()
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return datas
+
+    async def save_user_data(self, name, mobile, passwd):
+        datas = None
+        SQL = "Insert into ih_user_profile (up_name, up_mobile, up_passwd) values (%s, %s, %s);"
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    datas = await cursor.execute(SQL, (name, mobile, passwd))
+            except Exception as e:
+                logging.error(e)
+                conn.rollback()
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql入库出错"))
+        return datas
+
+class LoginHandler(RequestHandler):
+    def prepare(self):
+        if self.request.headers["Content-Type"].startswith("application/json"):
+            self.dataBody = json.loads(self.request.body)
+            if not self.dataBody:
+                self.dataBody = dict()
+    
+    async def post(self):
+        mobile = self.dataBody.get("mobile")
+        passwd = self.dataBody.get("password")
+
+        task = []
+        task.append(asyncio.ensure_future(self.check_user_data(mobile)))
+        for done in task:
+            data = await done
+            if not data:
+                return self.write(dict(errno = RET.USERERR, errmsg = "用户不存在"))
+        
+        # 密码是否正确
+        if passwd != data:
+            return self.write(dict(errno = RET.PWDERR, errmsg = "密码错误"))
+
+        # 设置session
+        try:
+            self.session = Session(self)
+            self.session.data["mobile"] = mobile
+            self.session.save()
+        except Exception as e:
+            logging.error(e)
+        return self.write(dict(errno=RET.OK, errmsg = "登录成功"))
+
+
+    async def check_user_data(self, mobile):
+        datas = None
+        SQL = "select up_passwd from ih_user_profile where up_mobile = %s;"
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(SQL, mobile)
+                    datas = cursor.fetchone()[0]
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
