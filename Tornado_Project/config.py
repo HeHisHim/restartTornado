@@ -2,6 +2,8 @@ import os
 
 log_level = "debug"
 log_file = os.path.join(os.path.dirname(__file__), "logs/log.txt")
+# Session有效时长(秒)
+SESSION_EXPIRES_SECONDS = 86400
 
 settings = dict(
     debug = True,
