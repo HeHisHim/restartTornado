@@ -12,7 +12,7 @@ from utils.session import Session
 
 class IndexHandler(RequestHandler):
     def get(self):
-        self.write("Hello World")
+        self.write(dict(errno = "123", errmsg = "123"))
 
 class RegisterHandler(RequestHandler):
     def prepare(self):
@@ -35,7 +35,7 @@ class RegisterHandler(RequestHandler):
 
         # 获取redis手机验证码
         try:
-            check_phonecode = self.application.redis.get("sms_code_%s" % mobile).decode("utf8")
+            check_phonecode = self.application.redis.get("sms_code_%s" % mobile)
         except Exception as e:
             logging.error(e)
             return self.write(dict(errno = RET.DBERR, errmsg = "redis查询出错"))
@@ -44,7 +44,7 @@ class RegisterHandler(RequestHandler):
         if not check_phonecode:
             return self.write(dict(errno = RET.NODATA , errmsg = "验证码过期"))
 
-        if check_phonecode != phoneCode:
+        if check_phonecode.decode("utf8") != phoneCode:
             return self.write(dict(errno = RET.DATAERR , errmsg = "验证码错误"))
 
         # 验证码取出后delete掉
@@ -89,6 +89,8 @@ class RegisterHandler(RequestHandler):
         try:
             self.session = Session(self)
             self.session.data["mobile"] = mobile
+            self.session.data["name"] = mobile
+            self.session.clear()
             self.session.save()
         except Exception as e:
             logging.error(e)
@@ -122,7 +124,7 @@ class RegisterHandler(RequestHandler):
 
 class LoginHandler(RequestHandler):
     def prepare(self):
-        if self.request.headers["Content-Type"].startswith("application/json"):
+        if self.request.headers.get("Content-Type") and self.request.headers.get("Content-Type").startswith("application/json"):
             self.dataBody = json.loads(self.request.body)
             if not self.dataBody:
                 self.dataBody = dict()
@@ -134,18 +136,20 @@ class LoginHandler(RequestHandler):
         task = []
         task.append(asyncio.ensure_future(self.check_user_data(mobile)))
         for done in task:
-            data = await done
-            if not data:
+            user_data = await done
+            if not user_data:
                 return self.write(dict(errno = RET.USERERR, errmsg = "用户不存在"))
         
         # 密码是否正确
-        if passwd != data:
+        if passwd != user_data[0]:
             return self.write(dict(errno = RET.PWDERR, errmsg = "密码错误"))
 
         # 设置session
         try:
             self.session = Session(self)
             self.session.data["mobile"] = mobile
+            self.session.data["name"] = user_data[1]
+            self.session.clear()
             self.session.save()
         except Exception as e:
             logging.error(e)
@@ -154,13 +158,29 @@ class LoginHandler(RequestHandler):
 
     async def check_user_data(self, mobile):
         datas = None
-        SQL = "select up_passwd from ih_user_profile where up_mobile = %s;"
+        SQL = "select up_passwd, up_name from ih_user_profile where up_mobile = %s;"
         async with await self.application.db.Connection() as conn:
             try:
                 async with conn.cursor() as cursor:
                     await cursor.execute(SQL, mobile)
-                    datas = cursor.fetchone()[0]
+                    datas = cursor.fetchone()
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
         return datas
+
+class CheckLoginHandler(RequestHandler):
+    """检查登录状态"""
+    def get(self):
+        session_id = self.get_secure_cookie("session_id")
+        try:
+            user_data = self.application.redis.get("sess_%s" % session_id)
+        except Exception as e:
+            logging.error(e)
+        
+        if user_data:
+            user_data = json.loads(user_data)
+            self.write(dict(errno = RET.OK, errmsg = "True", data = {"name": user_data.get("name")}))
+        else:
+            self.write(dict(errno = RET.SESSIONERR, errmsg = "False"))
+
