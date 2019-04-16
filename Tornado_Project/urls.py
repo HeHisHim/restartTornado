@@ -15,5 +15,6 @@ handlers = [
     # (r"/", passPort.IndexHandler),
     (r"/api/imagecode", verifyCode.ImageCodeHandler),
     (r"/api/smscode", verifyCode.PhoneCodeHandler),
+    (r"/api/register", passPort.RegisterHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
