@@ -79,7 +79,7 @@ function sendSMSCode() {
             //     errcode
             //     errmsg
             // }
-            if ("0" == data.errcode) {
+            if ("0" == data.errno) {
                 var duration = 60;
                 var timeObj = setInterval(function () {
                     duration = duration - 1;
@@ -90,11 +90,12 @@ function sendSMSCode() {
                         $(".phonecode-a").attr("onclick", "sendSMSCode();")
                     }
                 }, 1000, 60)
+                alert(JSON.stringify(data.secret));
             } else {
                 $("#image-code-err span").html(data.errmsg);
                 $("#image-code-err").show();
                 $(".phonecode-a").attr("onclick", "sendSMSCode();")
-                if (data.errcode == "4002" || data.errcode == "4004") {
+                if (data.errno == "4002" || data.errno == "4004" || data.errno == "4001") {
                     generateImageCode();
                 }
             }
