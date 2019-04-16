@@ -7,21 +7,17 @@ class Session:
     def __init__(self, request_handler):
         self.request_handler = request_handler
         self.session_id = self.request_handler.get_secure_cookie("session_id")
+        self.data = {}
         # 如果为空, 表示用户第一次登录, 生成一个新的session_id(全局唯一)
         if not self.session_id:
             self.session_id = uuid.uuid4().hex
-            self.data = {}
         else:
             try:
-                data = self.request_handler.application.redis.get("sess_%s" % self.session_id).decode("utf8")
+                data = self.request_handler.application.redis.get("sess_%s" % self.session_id)
             except Exception as e:
                 logging.error(e)
-                self.data = {}
-            if not data:
-                # 没数据代表session过期: 重新生成新的id
-                self.session_id = uuid.uuid4().hex
-            else:
-                self.data = json.loads(data)
+            if data:
+                self.data = json.loads(data.decode("utf8"))
 
     def save(self):
         json_data = json.dumps(self.data)
