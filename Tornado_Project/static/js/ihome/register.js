@@ -171,7 +171,6 @@ $(document).ready(function() {
                 "X-XSRFTOKEN": getCookie("_xsrf"),
             },
             success: function (data) {
-                alert(JSON.stringify(data))
                 if ("0" == data.errno) {
                     location.href = "/";
                 } else {

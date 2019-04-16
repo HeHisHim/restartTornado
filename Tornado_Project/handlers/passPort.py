@@ -19,7 +19,6 @@ class RegisterHandler(RequestHandler):
             self.dataBody = json.loads(self.request.body)
             if not self.dataBody:
                 self.dataBody = dict()
-        print(self.dataBody)
     async def post(self):
         mobile = self.dataBody.get("mobile")
         phoneCode = self.dataBody.get("phonecode")
@@ -84,7 +83,6 @@ class RegisterHandler(RequestHandler):
                 async with conn.cursor() as cursor:
                     await cursor.execute(SQL, user_phone)
                     datas = cursor.fetchone()
-                    print("datas: ", datas)
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
