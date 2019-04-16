@@ -17,5 +17,6 @@ handlers = [
     (r"/api/smscode", verifyCode.PhoneCodeHandler),
     (r"/api/register", passPort.RegisterHandler),
     (r"/api/login", passPort.LoginHandler),
+    (r"/api/check_login", passPort.CheckLoginHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
