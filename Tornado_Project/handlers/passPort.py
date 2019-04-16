@@ -90,7 +90,6 @@ class RegisterHandler(RequestHandler):
             self.session = Session(self)
             self.session.data["mobile"] = mobile
             self.session.data["name"] = mobile
-            self.session.clear()
             self.session.save()
         except Exception as e:
             logging.error(e)
@@ -149,7 +148,6 @@ class LoginHandler(RequestHandler):
             self.session = Session(self)
             self.session.data["mobile"] = mobile
             self.session.data["name"] = user_data[1]
-            self.session.clear()
             self.session.save()
         except Exception as e:
             logging.error(e)
@@ -172,7 +170,11 @@ class LoginHandler(RequestHandler):
 class CheckLoginHandler(RequestHandler):
     """检查登录状态"""
     def get(self):
-        session_id = self.get_secure_cookie("session_id")
+        if self.get_secure_cookie("session_id"):
+            session_id = self.get_secure_cookie("session_id").decode("utf8")
+        else:
+            return self.write(dict(errno = RET.SESSIONERR, errmsg = "False"))
+
         try:
             user_data = self.application.redis.get("sess_%s" % session_id)
         except Exception as e:
