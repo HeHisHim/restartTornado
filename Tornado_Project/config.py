@@ -10,8 +10,8 @@ settings = dict(
     static_path = os.path.join(os.path.dirname(__file__), "static"),
     template_path = os.path.join(os.path.dirname(__file__), "template"),
     cookie_secret = "",
-    xsrf_cookies = True,
-    login_url = "/login", 
+    xsrf_cookies = False,
+    login_url = "/login",
 )
 
 mysql_options = dict(
@@ -22,7 +22,7 @@ mysql_options = dict(
     user = "",
     passwd = "",
     db = "",
-    charset = ""
+    charset = "utf8"
 )
 
 redis_options = dict(
@@ -30,4 +30,12 @@ redis_options = dict(
     port = 0, 
     db = 0, 
     password = ""
-) 
+)
+
+pure_mysql_options = dict(
+    host = "",
+    user = "",
+    password = "",
+    database = "",
+    charset = "utf8"
+)
