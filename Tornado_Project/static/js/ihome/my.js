@@ -8,10 +8,10 @@ function logout() {
 
 $(document).ready(function(){
     $.get("/api/profile", function(data) {
-        if ("4101" == data.errcode) {
+        if ("0" != data.errno) {
             location.href = "/login.html";
         }
-        else if ("0" == data.errcode) {
+        else if ("0" == data.errno) {
             $("#user-name").html(data.data.name);
             $("#user-mobile").html(data.data.mobile);
             if (data.data.avatar) {
