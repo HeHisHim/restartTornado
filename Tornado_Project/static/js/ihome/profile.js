@@ -13,10 +13,10 @@ function getCookie(name) {
 
 $(document).ready(function () {
     $.get("/api/profile", function(data){
-        if ("4101" == data.errcode) {
+        if ("4101" == data.errno) {
             location.href = "/login.html";
         }
-        else if ("0" == data.errcode) {
+        else if ("0" == data.errno) {
             $("#user-name").val(data.data.name);
             if (data.data.avatar) {
                 $("#user-avatar").attr("src", data.data.avatar);
@@ -60,12 +60,12 @@ $(document).ready(function () {
                 "X-XSRFTOKEN":getCookie("_xsrf"),
             },
             success: function (data) {
-                if ("0" == data.errcode) {
+                if ("0" == data.errno) {
                     $(".error-msg").hide();
                     showSuccessMsg(); // 展示保存成功的页面效果
-                } else if ("4001" == data.errcode) {
+                } else if ("4001" == data.errno) {
                     $(".error-msg").show();
-                } else if ("4101" == data.errcode) { // 4101代表用户未登录，强制跳转到登录页面
+                } else if ("4101" == data.errno) { // 4101代表用户未登录，强制跳转到登录页面
                     location.href = "/login.html";
                 }
             }
