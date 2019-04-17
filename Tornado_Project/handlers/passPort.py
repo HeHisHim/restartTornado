@@ -134,7 +134,7 @@ class LoginHandler(RequestHandler):
 
         task = []
         task.append(asyncio.ensure_future(self.check_user_data(mobile)))
-        for done in task:
+        for done in asyncio.as_completed(task):
             user_data = await done
             if not user_data:
                 return self.write(dict(errno = RET.USERERR, errmsg = "用户不存在"))
