@@ -21,5 +21,6 @@ handlers = [
     (r"/api/profile", profile.ProfileHandler),
     (r"/api/logout", passPort.LogoutHandler),
     (r"/api/profile/name", profile.NameHandler),
+    (r"/api/profile/auth", profile.AuthHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
