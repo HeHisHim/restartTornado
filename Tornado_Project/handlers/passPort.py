@@ -6,6 +6,7 @@ import re
 import asyncio
 import tornado.ioloop
 
+import utils.common
 from tornado.web import RequestHandler
 from utils.response_code import RET
 from utils.session import Session
@@ -186,3 +187,19 @@ class CheckLoginHandler(RequestHandler):
         else:
             self.write(dict(errno = RET.SESSIONERR, errmsg = "False"))
 
+class LogoutHandler(RequestHandler):
+    """
+    清除session
+    """
+    def get_current_user(self):
+        self.user_data = dict()
+        return utils.common.get_current_user(self)
+
+    @utils.common.require_logined
+    def get(self):
+        try:
+            self.session = Session(self)
+            self.session.clear()
+        except Exception as e:
+            logging.error(e)
+        return self.write(dict(errno=RET.OK, errmsg = "注销成功"))
