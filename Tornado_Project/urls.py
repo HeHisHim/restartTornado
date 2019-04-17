@@ -1,6 +1,6 @@
 import os
 
-from handlers import passPort, verifyCode
+from handlers import passPort, verifyCode, profile
 
 import tornado.web
 
@@ -18,5 +18,6 @@ handlers = [
     (r"/api/register", passPort.RegisterHandler),
     (r"/api/login", passPort.LoginHandler),
     (r"/api/check_login", passPort.CheckLoginHandler),
+    (r"/api/profile", profile.ProfileHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
