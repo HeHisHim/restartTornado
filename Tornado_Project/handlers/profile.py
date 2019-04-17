@@ -13,19 +13,8 @@ from utils.session import Session
 
 class ProfileHandler(RequestHandler):
     def get_current_user(self):
-        if self.get_secure_cookie("session_id"):
-            session_id = self.get_secure_cookie("session_id").decode("utf8")
-            try:
-                self.user_data = self.application.redis.get("sess_%s" % session_id)
-            except Exception as e:
-                logging.error(e)
-                return False
-            if self.user_data:
-                self.user_data = json.loads(self.user_data)
-                return True
-            else:
-                return False
-        return False
+        self.user_data = dict()
+        return utils.common.get_current_user(self)
     """个人信息"""
     @utils.common.require_logined # 验证登录
     def get(self):
@@ -47,4 +36,51 @@ class ProfileHandler(RequestHandler):
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return datas
+
+class NameHandler(RequestHandler):
+    def get_current_user(self):
+        self.user_data = dict()
+        return utils.common.get_current_user(self)
+
+    def prepare(self):
+        if self.request.headers["Content-Type"].startswith("application/json"):
+            self.dataBody = json.loads(self.request.body)
+            if not self.dataBody:
+                self.dataBody = dict()
+
+    @utils.common.require_logined # 验证登录
+    def post(self):
+        """
+        name: xxx
+        修改session的数据
+        更新session刷新redis
+        操作mysql update名字
+        """
+        name = self.dataBody.get("name")
+        try:
+            self.session = Session(self)
+            self.session.data["name"] = name
+            self.session.save()
+        except Exception as e:
+            logging.error(e)
+
+        data = self.update_user_name(name, self.user_data.get("mobile"))
+        if not data:
+            return self.write(dict(errno = RET.DBERR, errmsg = "更换错误"))
+
+        return self.write(dict(errno = RET.OK, errmsg = "更新成功"))
+
+    def update_user_name(self, name, phone):
+        datas = None
+        SQL = "update ih_user_profile set up_name = %s where up_mobile = %s;"
+        with self.application.puredb.cursor() as cursor:
+            try:
+                datas = cursor.execute(SQL, (name, phone))
+                self.application.puredb.commit()
+            except Exception as e:
+                logging.error(e)
+                self.application.puredb.rollback()
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
+        print(datas)
         return datas
