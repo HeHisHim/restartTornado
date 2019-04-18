@@ -31,26 +31,26 @@
                     </div>
                 </li>
             </ul>
+            <li>
+                <div class="new-house">
+                    <a href="/newhouse.html">发布新房源</a>
+                </div>
+            </li>
             <ul id="houses-list" class="houses-list">
             </ul>
             <script id="houses-list-tmpl" type="text/html">
-                <li>
-                    <div class="new-house">
-                        <a href="/newhouse.html">发布新房源</a>
-                    </div>
-                </li>
                 {{each houses as house}}
                 <li>
                     <a href="/detail.html?id={{house.house_id}}&f=my">
                         <div class="house-title">
-                            <h3>房屋ID:{{house.house_id}} —— {{house.title}}</h3>
+                            <h3>房屋ID:{{house.house_id}} — {{house.title}}</h3>
                         </div>
                         <div class="house-content">
                             <img src="{{house.img_url}}">
                             <div class="house-text">
                                 <ul>
                                     <li>位于：{{house.area_name}}</li>
-                                    <li>价格：￥{{(house.price/100.0).toFixed(0)}}/晚</li>
+                                    <li>价格：￥{{(house.price).toFixed(0)}}</li>
                                     <li>发布时间：{{house.ctime}}</li>
                                 </ul>
                             </div>
