@@ -99,7 +99,7 @@ class AuthHandler(RequestHandler):
     def get(self):
         user_phone = self.user_data.get("mobile")
         user_datas = self.get_real_data(user_phone)
-        if user_datas and user_datas[0] and user_datas[1]:
+        if user_datas:
             return self.write(dict(errno = RET.OK, errmsg = "OK", data = {"real_name": user_datas[0], "id_card": user_datas[1]}))
 
     @utils.common.require_logined # 验证登录
