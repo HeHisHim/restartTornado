@@ -81,7 +81,7 @@ class RegisterHandler(RequestHandler):
         save_task.append(asyncio.ensure_future(self.save_user_data(mobile, mobile, passwd)))
         for done in asyncio.as_completed(save_task):
             data = await done
-            if not data:
+            if not data[0]:
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql插入出错"))
 
         """
@@ -89,6 +89,7 @@ class RegisterHandler(RequestHandler):
         """
         try:
             self.session = Session(self)
+            self.session.data["uid"] = data[1]
             self.session.data["mobile"] = mobile
             self.session.data["name"] = mobile
             self.session.save()
@@ -116,11 +117,12 @@ class RegisterHandler(RequestHandler):
             try:
                 async with conn.cursor() as cursor:
                     datas = await cursor.execute(SQL, (name, mobile, passwd))
+                    uid = cursor.lastrowid
             except Exception as e:
                 logging.error(e)
                 conn.rollback()
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql入库出错"))
-        return datas
+        return (datas, uid)
 
 class LoginHandler(RequestHandler):
     def prepare(self):
@@ -149,6 +151,7 @@ class LoginHandler(RequestHandler):
             self.session = Session(self)
             self.session.data["mobile"] = mobile
             self.session.data["name"] = user_data[1]
+            self.session.data["uid"] = user_data[2]
             self.session.save()
         except Exception as e:
             logging.error(e)
@@ -157,7 +160,7 @@ class LoginHandler(RequestHandler):
 
     async def check_user_data(self, mobile):
         datas = None
-        SQL = "select up_passwd, up_name from ih_user_profile where up_mobile = %s;"
+        SQL = "select up_passwd, up_name, up_user_id from ih_user_profile where up_mobile = %s;"
         async with await self.application.db.Connection() as conn:
             try:
                 async with conn.cursor() as cursor:
