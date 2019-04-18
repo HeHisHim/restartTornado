@@ -5,7 +5,7 @@ function getCookie(name) {
 
 $(document).ready(function(){
     $.get("/api/house/area", function (data) {
-        if ("0" == data.errcode) {
+        if ("0" == data.errno) {
             // html = template("area-tmpl", {areas: data.data});
             // $("#area-id").html(html);
             // console.log(html);
