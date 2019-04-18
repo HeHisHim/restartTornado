@@ -5,6 +5,7 @@ $(document).ready(function(){
         } else if ("0" == data.errno) {
             if ("" == data.data.real_name || "" == data.data.id_card || null == data.data.real_name || null == data.data.id_card) {
                 $(".auth-warn").show();
+                $(".new-house").hide();
                 return;
             }
             $.get("/api/house/my", function(result){
