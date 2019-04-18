@@ -23,6 +23,7 @@ handlers = [
     (r"/api/profile/name", profile.NameHandler),
     (r"/api/profile/auth", profile.AuthHandler),
     (r"/api/house/area", house.AreaIngoHandler),
+    (r"/api/house/my", house.MyHouseHandler),
     # (r"/api/house/my", house.HouseHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
