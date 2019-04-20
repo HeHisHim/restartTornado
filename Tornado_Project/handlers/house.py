@@ -137,49 +137,53 @@ class HouseInfoHandler(RequestHandler):
         if not all((title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days)):
             return self.write(dict(errcode=RET.PARAMERR, errmsg="缺少参数"))
 
+        facility = json.dumps(facility)
         ret = self.set_house_info(uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility)
         if not ret:
             return self.write(dict(errno = RET.DBERR, errmsg = "数据库错误"))
         return self.write(dict(errno = RET.OK, errmsg = "OK", house_id = ret))
         
-    
+    # @utils.common.require_logined
     def get(self):
-        pass
+        # uid = self.user_data.get("uid")
+        uid = self.get_argument("uid")
+        res = self.get_house_info(uid)
+        print(type(res[0]))
+        print(res)
+        if not res:
+            return 
+        
+        res = json.loads(res[0])
+        print(type(res))
+        
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
         last_house_id = None
         SQL = "Insert into ih_house_info(hi_user_id, hi_title, hi_price, hi_area_id, hi_address, hi_room_count, \
-                hi_acreage, hi_house_unit, hi_capacity, hi_beds,hi_deposit, hi_min_days, hi_max_days) \
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
+                hi_acreage, hi_house_unit, hi_capacity, hi_beds,hi_deposit, hi_min_days, hi_max_days, hi_facility) \
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
         with self.application.puredb.cursor() as cursor:
             try:
-                cursor.execute(SQL, (uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days))
+                cursor.execute(SQL, (uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility))
                 self.application.puredb.commit()
                 last_house_id = cursor.lastrowid
             except Exception as e:
                 logging.error(e)
                 self.application.puredb.rollback()
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
-        # return data
-        if facility:
-            vals = []
-            exec_num = len(facility)
-
-            for fid in facility:
-                vals.append(last_house_id)
-                vals.append(fid)
-
-            SQL = "Insert into ih_house_facility(hf_house_id, hf_facility_id) values " + (exec_num - 1) * "(%s, %s), " + "(%s, %s);"
-            with self.application.puredb.cursor() as cursor:
-                try:
-                    cursor.execute(SQL, args = vals)
-                    self.application.puredb.commit()
-                except Exception as e:
-                    logging.error(e)
-                    self.application.puredb.rollback()
-                    return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
-
         return last_house_id
+
+    def get_house_info(self, uid):
+        datas = None
+        SQL = "select hi_facility from ih_house_info where hi_user_id = %s;"
+        with self.application.puredb.cursor() as cursor:
+            try:
+                cursor.execute(SQL, uid)
+                datas = cursor.fetchone()
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
+        return datas
 
 
 
