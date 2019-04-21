@@ -5,6 +5,7 @@ import random
 import re
 import asyncio
 import tornado.ioloop
+import math
 
 import constants
 import utils.common
@@ -144,19 +145,16 @@ class HouseInfoHandler(RequestHandler):
             return self.write(dict(errno = RET.DBERR, errmsg = "数据库错误"))
         return self.write(dict(errno = RET.OK, errmsg = "OK", house_id = ret))
         
-    # @utils.common.require_logined
+    @utils.common.require_logined
     def get(self):
-        # uid = self.user_data.get("uid")
+        uid = self.user_data.get("uid")
         uid = self.get_argument("uid")
         res = self.get_house_info(uid)
-        print(type(res[0]))
-        print(res)
+
         if not res:
             return 
         
-        res = json.loads(res[0])
-        print(type(res))
-        
+        res = json.loads(res[0])        
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
         last_house_id = None
@@ -196,49 +194,64 @@ class HouseListHandler(LogicBaseHandler):
         sort_key = self.get_argument("sk", "new") # 最新上线, 入住最多, 价格低-高, 价格高-低
         page = self.get_argument("page", "1")
         task = []
+        resHouses = []
         # 校验
-        task.append(self.get_houseInfo_index(start_date, end_date, aid, sort_key, page))
+        page = int(page)
 
+        task.append(asyncio.ensure_future(self.get_houseInfo_index(start_date, end_date, aid, sort_key, page)))
+        task.append(asyncio.ensure_future(self.get_all_houseInfo()))
         for done in asyncio.as_completed(task):
             result = await done
+            if isinstance(result, tuple):
+                for res in result:
+                    house = {
+                        "house_id": res[0],
+                        "title": res[1],
+                        "price": res[2],
+                        "room_count": res[3],
+                        "address": res[4],
+                        "order_count": res[5],
+                        "avatar_url": res[6],
+                        "img_url": res[7],
+                    }
+                    resHouses.append(house)
 
-        print(result)
+            elif isinstance(result, int):
+                pageCount = math.ceil(result / constants.HOME_PAGE_MAX_HOUSES * 1.0)
 
+        return self.write(dict(errno = RET.OK, errmsg = "OK", total_page = pageCount, data = resHouses))
         
     async def get_houseInfo_index(self, start_date, end_date, aid, sort_key, page):
-        print("sort_key: ", sort_key)
         dateSQL = areaSQL = ""
-        whereSQL = []
-        SQL_params = {}
+        self.whereSQL = []
+        self.SQL_params = {}
         datas = None
 
         # 查询 ih_house_info, ih_user_profile, ih_order_info
-        SQL = "Select distinct hi_title, hi_house_id, hi_price, hi_room_count, hi_address, hi_order_count, up_avatar, hi_index_image_url, hi_utime \
+        SQL = "Select distinct hi_house_id, hi_title, hi_price, hi_room_count, hi_address, hi_order_count, up_avatar, hi_index_image_url, hi_utime \
                 from ih_house_info as x left join ih_order_info as y on x.hi_house_id = y.oi_house_id \
                 join ih_user_profile as z on x.hi_user_id = z.up_user_id "
-
         if start_date and end_date:
-            dateSQL = "(not (y.oi_begin_date < %(end_date)s and y.oi_end_date > %(start_date)s))"
-            SQL_params["start_date"] = start_date
-            SQL_params["end_date"] = end_date
-            whereSQL.append(dateSQL)
+            dateSQL = "(y.oi_begin_date is null and y.oi_end_date is null) or (not (y.oi_begin_date <= %(end_date)s and y.oi_end_date >= %(start_date)s))"
+            self.SQL_params["start_date"] = start_date
+            self.SQL_params["end_date"] = end_date
+            self.whereSQL.append(dateSQL)
         elif start_date:
-            dateSQL = "y.oi_end_date < %(start_date)s"
-            SQL_params["start_date"] = start_date
-            whereSQL.append(dateSQL)
+            dateSQL = "(y.oi_begin_date is null and y.oi_end_date is null) or (y.oi_end_date < %(start_date)s)"
+            self.SQL_params["start_date"] = start_date
+            self.whereSQL.append(dateSQL)
         elif end_date:
-            dateSQL = "y.oi_begin_date > %(end_date)s"
-            SQL_params["end_date"] = end_date
-            whereSQL.append(dateSQL)
+            dateSQL = "(y.oi_begin_date is null and y.oi_end_date is null) or (y.oi_begin_date > %(end_date)s)"
+            self.SQL_params["end_date"] = end_date
+            self.whereSQL.append(dateSQL)
         if aid:
             areaSQL = "x.hi_area_id = %(aid)s"
-            SQL_params["aid"] = aid
-            whereSQL.append(areaSQL)
+            self.SQL_params["aid"] = aid
+            self.whereSQL.append(areaSQL)
 
-        if whereSQL:
+        if self.whereSQL:
             SQL += " where "
-            SQL += " and ".join(whereSQL)
-
+            SQL += " and ".join(self.whereSQL)
         if "hot" == sort_key:
             SQL += " order by x.hi_order_count desc"
         elif "pri-inc" == sort_key:
@@ -248,15 +261,33 @@ class HouseListHandler(LogicBaseHandler):
         else:
             SQL += " order by x.hi_utime desc"
 
-        print("SQL_params: ", SQL_params)
+        if 1 == page:
+            SQL += " limit %s" % constants.HOUSE_LIST_PAGE_CAPACITY
+        else:
+            SQL += "limit %s, %s" % (page * constants.HOUSE_LIST_PAGE_CAPACITY, constants.HOUSE_LIST_PAGE_CAPACITY)
 
         async with await self.application.db.Connection() as conn:
             try:
                 async with conn.cursor() as cursor:
-                    print("SQL: ", SQL)
-                    await cursor.execute(SQL, SQL_params)
+                    await cursor.execute(SQL, self.SQL_params)
                     datas = cursor.fetchall()
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
         return datas
+
+    async def get_all_houseInfo(self):
+        res = 0
+        SQL = "Select count(*) from ih_house_info as x left join ih_order_info as y on x.hi_house_id = y.oi_house_id "
+        if self.whereSQL:
+            SQL += " where "
+            SQL += " and ".join(self.whereSQL) 
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(SQL, self.SQL_params)
+                    res = int(cursor.fetchone()[0])
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return res
