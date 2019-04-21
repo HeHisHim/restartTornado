@@ -35,11 +35,11 @@ function updateHouseData(action="append") {
         sd:startDate,
         ed:endDate,
         sk:sortKey,
-        p:next_page
+        page:next_page
     };
-    $.get("/api/house/list2", params, function(data){
+    $.get("/api/house/list", params, function(data){
         house_data_querying = false;
-        if ("0" == data.errcode) {
+        if ("0" == data.errno) {
             if (0 == data.total_page) {
                 $(".house-list").html("暂时没有符合您查询的房屋信息。");
             } else {
@@ -68,7 +68,7 @@ $(document).ready(function(){
     $(".filter-title-bar>.filter-title").eq(1).children("span").eq(0).html(areaName);
 
     $.get("/api/house/area", function(data){
-        if ("0" == data.errcode) {
+        if ("0" == data.errno) {
             var areaId = queryData["aid"];
             if (areaId) {
                 for (var i=0; i<data.data.length; i++) {
