@@ -25,6 +25,6 @@ handlers = [
     (r"/api/house/area", house.AreaIngoHandler),
     (r"/api/house/my", house.MyHouseHandler),
     (r"/api/house/info", house.HouseInfoHandler),
-    # (r"/api/house/my", house.HouseHandler),
+    (r"/api/house/list", house.HouseListHandler),
     (r"^/(.*)$", StaticFileHandler, {"path": os.path.join(current_path, "html"), "default_filename": "index.html"}),
 ]
