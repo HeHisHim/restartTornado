@@ -11,6 +11,7 @@ import utils.common
 from tornado.web import RequestHandler
 from utils.response_code import RET
 from utils.session import Session
+from .logic import LogicBaseHandler
 
 class AreaIngoHandler(RequestHandler):
     async def get(self):
@@ -186,4 +187,76 @@ class HouseInfoHandler(RequestHandler):
         return datas
 
 
+class HouseListHandler(LogicBaseHandler):
+    async def get(self):
+        # 获取参数
+        start_date = self.get_argument("sd", "")
+        end_date = self.get_argument("ed", "")
+        aid = self.get_argument("aid", "")
+        sort_key = self.get_argument("sk", "new") # 最新上线, 入住最多, 价格低-高, 价格高-低
+        page = self.get_argument("page", "1")
+        task = []
+        # 校验
+        task.append(self.get_houseInfo_index(start_date, end_date, aid, sort_key, page))
 
+        for done in asyncio.as_completed(task):
+            result = await done
+
+        print(result)
+
+        
+    async def get_houseInfo_index(self, start_date, end_date, aid, sort_key, page):
+        print("sort_key: ", sort_key)
+        dateSQL = areaSQL = ""
+        whereSQL = []
+        SQL_params = {}
+        datas = None
+
+        # 查询 ih_house_info, ih_user_profile, ih_order_info
+        SQL = "Select distinct hi_title, hi_house_id, hi_price, hi_room_count, hi_address, hi_order_count, up_avatar, hi_index_image_url, hi_utime \
+                from ih_house_info as x left join ih_order_info as y on x.hi_house_id = y.oi_house_id \
+                join ih_user_profile as z on x.hi_user_id = z.up_user_id "
+
+        if start_date and end_date:
+            dateSQL = "(not (y.oi_begin_date < %(end_date)s and y.oi_end_date > %(start_date)s))"
+            SQL_params["start_date"] = start_date
+            SQL_params["end_date"] = end_date
+            whereSQL.append(dateSQL)
+        elif start_date:
+            dateSQL = "y.oi_end_date < %(start_date)s"
+            SQL_params["start_date"] = start_date
+            whereSQL.append(dateSQL)
+        elif end_date:
+            dateSQL = "y.oi_begin_date > %(end_date)s"
+            SQL_params["end_date"] = end_date
+            whereSQL.append(dateSQL)
+        if aid:
+            areaSQL = "x.hi_area_id = %(aid)s"
+            SQL_params["aid"] = aid
+            whereSQL.append(areaSQL)
+
+        if whereSQL:
+            SQL += " where "
+            SQL += " and ".join(whereSQL)
+
+        if "hot" == sort_key:
+            SQL += " order by x.hi_order_count desc"
+        elif "pri-inc" == sort_key:
+            SQL += " order by x.hi_prece asc"
+        elif "pri-des" == sort_key:
+            SQL += " order by x.hi_prece desc"
+        else:
+            SQL += " order by x.hi_utime desc"
+
+        print("SQL_params: ", SQL_params)
+
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    print("SQL: ", SQL)
+                    await cursor.execute(SQL, SQL_params)
+                    datas = cursor.fetchall()
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return datas
