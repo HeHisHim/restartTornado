@@ -154,7 +154,7 @@ class HouseInfoHandler(RequestHandler):
         if not res:
             return 
         
-        res = json.loads(res[0])        
+        res = json.loads(res[0])
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
         last_house_id = None
@@ -195,8 +195,16 @@ class HouseListHandler(LogicBaseHandler):
         page = self.get_argument("page", "1")
         task = []
         resHouses = []
+        pageCount = 0
+        theKey = "house_info_%s_%s_%s_%s" % (start_date, end_date, aid, sort_key)
         # 校验
         page = int(page)
+
+        redisRes = self.get_houseList_inRedis(theKey, str(page))
+        pageCount = self.get_houseList_inRedis(theKey, "total")
+        if redisRes:
+            redisRes = redisRes.decode("utf8")
+            return self.write(dict(errno = RET.OK, errmsg = "OK", total_page = pageCount.decode("utf8"), data = json.loads(redisRes)))
 
         task.append(asyncio.ensure_future(self.get_houseInfo_index(start_date, end_date, aid, sort_key, page)))
         task.append(asyncio.ensure_future(self.get_all_houseInfo()))
@@ -219,7 +227,11 @@ class HouseListHandler(LogicBaseHandler):
             elif isinstance(result, int):
                 pageCount = math.ceil(result / constants.HOME_PAGE_MAX_HOUSES * 1.0)
 
-        return self.write(dict(errno = RET.OK, errmsg = "OK", total_page = pageCount, data = resHouses))
+        pageDatas = resHouses[:constants.HOUSE_LIST_PAGE_CAPACITY]
+
+        self.set_houseList_inRedis(theKey, page, resHouses, pageCount)
+
+        return self.write(dict(errno = RET.OK, errmsg = "OK", total_page = pageCount, data = pageDatas))
         
     async def get_houseInfo_index(self, start_date, end_date, aid, sort_key, page):
         dateSQL = areaSQL = ""
@@ -262,9 +274,9 @@ class HouseListHandler(LogicBaseHandler):
             SQL += " order by x.hi_utime desc"
 
         if 1 == page:
-            SQL += " limit %s" % constants.HOUSE_LIST_PAGE_CAPACITY
+            SQL += " limit %d" % (constants.HOUSE_LIST_PAGE_CAPACITY * constants.HOME_LIST_REIDS_CACHED_PAGE)
         else:
-            SQL += "limit %s, %s" % (page * constants.HOUSE_LIST_PAGE_CAPACITY, constants.HOUSE_LIST_PAGE_CAPACITY)
+            SQL += " limit %d, %d" % ((page - 1) * constants.HOUSE_LIST_PAGE_CAPACITY * constants.HOME_LIST_REIDS_CACHED_PAGE, constants.HOUSE_LIST_PAGE_CAPACITY * constants.HOME_LIST_REIDS_CACHED_PAGE)
 
         async with await self.application.db.Connection() as conn:
             try:
@@ -278,7 +290,7 @@ class HouseListHandler(LogicBaseHandler):
 
     async def get_all_houseInfo(self):
         res = 0
-        SQL = "Select count(*) from ih_house_info as x left join ih_order_info as y on x.hi_house_id = y.oi_house_id "
+        SQL = "Select count(distinct x.hi_house_id) from ih_house_info as x left join ih_order_info as y on x.hi_house_id = y.oi_house_id "
         if self.whereSQL:
             SQL += " where "
             SQL += " and ".join(self.whereSQL) 
@@ -290,4 +302,30 @@ class HouseListHandler(LogicBaseHandler):
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return res
+    
+    def set_houseList_inRedis(self, theKey, innerKey, allDatas, total):
+        saveMe = {}
+        arr = []
+        for data in allDatas:
+            if constants.HOUSE_LIST_PAGE_CAPACITY == len(arr):
+                saveMe[str(innerKey)] = json.dumps(arr)
+                innerKey += 1
+                arr = []
+            arr.append(data)
+        else:
+            saveMe[str(innerKey)] = json.dumps(arr)
+        saveMe["total"] = total
+
+        try:
+            self.application.redis.hmset(theKey, saveMe)
+        except Exception as e:
+            logging.error(e)
+
+    def get_houseList_inRedis(self, theKey, innerKey):
+        try:
+            res = self.application.redis.hget(theKey, innerKey)
+        except Exception as e:
+            logging.error(e)
+            # return self.write(dict(errno = RET.DBERR, errmsg = "redis查询出错"))
         return res
