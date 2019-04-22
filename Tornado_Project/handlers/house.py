@@ -319,6 +319,7 @@ class HouseListHandler(LogicBaseHandler):
 
         try:
             self.application.redis.hmset(theKey, saveMe)
+            self.application.redis.expire(theKey, constants.AREA_INFO_REDIS_EXPIRES_SECONDS)
         except Exception as e:
             logging.error(e)
 
@@ -327,5 +328,4 @@ class HouseListHandler(LogicBaseHandler):
             res = self.application.redis.hget(theKey, innerKey)
         except Exception as e:
             logging.error(e)
-            # return self.write(dict(errno = RET.DBERR, errmsg = "redis查询出错"))
         return res
