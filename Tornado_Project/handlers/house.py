@@ -329,3 +329,59 @@ class HouseListHandler(LogicBaseHandler):
         except Exception as e:
             logging.error(e)
         return res
+
+class HouseIndexHandler(LogicBaseHandler):
+    async def get(self):
+        task = []
+        houses = []
+        areas = []
+        task.append(asyncio.ensure_future(self.get_IndexData_fromMySQL()))
+        task.append(asyncio.ensure_future(self.get_area_info()))
+        for done in asyncio.as_completed(task):
+            results = await done
+            if results:
+                if "area" == results[0]:
+                    for res in results[1]:
+                        area = {
+                            "area_id": res[0], 
+                            "name": res[1]
+                        }
+                        areas.append(area)
+                elif "house" == results[0]:
+                    for res in results[1]:
+                        house = {
+                            "house_id": res[0],
+                            "title": res[1],
+                            "img_url": "/static/images/home01.jpg"
+                        }
+                        houses.append(house)
+        return self.write(dict(errno = RET.OK, errmsg = "OK", houses = houses, areas = areas))
+
+    async def get_IndexData_fromMySQL(self):
+        datas = ["house"]
+        # 根据下单数量排序并取前5个来显示
+        SQL = "select hi_house_id, hi_title, hi_index_image_url from ih_house_info \
+                order by hi_order_count desc limit 5;"
+
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(SQL)
+                    datas.append(cursor.fetchall())
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+            return datas
+
+    async def get_area_info(self):
+        datas = ["area"]
+        SQL =  "select ai_area_id, ai_name from ih_area_info;"
+        async with await self.application.db.Connection() as conn:
+            try:
+                async with conn.cursor() as cursor:
+                    await cursor.execute(SQL)
+                    datas.append(cursor.fetchall())
+            except Exception as e:
+                logging.error(e)
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+        return datas
