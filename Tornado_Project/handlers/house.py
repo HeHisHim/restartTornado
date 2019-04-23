@@ -335,8 +335,15 @@ class HouseIndexHandler(LogicBaseHandler):
         task = []
         houses = []
         areas = []
+        # 先去redis里面找, 命中缓存就不去MySQL里面找了
+        tmpAreas = self.get_area_info_inCache()
+        if tmpAreas:
+            areas = json.loads(tmpAreas.decode("utf8"))
+        else:
+            task.append(asyncio.ensure_future(self.get_area_info()))
+
         task.append(asyncio.ensure_future(self.get_IndexData_fromMySQL()))
-        task.append(asyncio.ensure_future(self.get_area_info()))
+        
         for done in asyncio.as_completed(task):
             results = await done
             if results:
@@ -355,6 +362,9 @@ class HouseIndexHandler(LogicBaseHandler):
                             "img_url": "/static/images/home01.jpg"
                         }
                         houses.append(house)
+        # 如果task数量大于1, 说明有去MySQL找区域数据, 将数据存进缓存, 覆盖area_info
+        if 1 < len(task):
+            self.set_area_infoCache(areas)
         return self.write(dict(errno = RET.OK, errmsg = "OK", houses = houses, areas = areas))
 
     async def get_IndexData_fromMySQL(self):
@@ -385,3 +395,18 @@ class HouseIndexHandler(LogicBaseHandler):
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
         return datas
+
+    def get_area_info_inCache(self):
+        areaInfo = None
+        try:
+            areaInfo = self.application.redis.get("area_info")
+        except Exception as e:
+            logging.error(e)
+
+        return areaInfo
+
+    def set_area_infoCache(self, datas):
+        try:
+            self.application.redis.setex("area_info", constants.AREA_INFO_REDIS_EXPIRES_SECONDS, json.dumps(datas))
+        except Exception as e:
+            logging.error(e)
