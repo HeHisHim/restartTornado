@@ -94,8 +94,6 @@ class MyHouseHandler(RequestHandler):
                 houses.append(house)
         return self.write(dict(errno = RET.OK, errmsg = "OK", houses = houses))
 
-
-
     def get_house_info(self, uid):
         datas = None
         SQL = "select x.hi_house_id, x.hi_title, x.hi_price, x.hi_utime, y.ai_name, x.hi_index_image_url from ih_house_info as x left join ih_area_info as y on x.hi_area_id = y.ai_area_id where x.hi_user_id = %s;"
@@ -144,17 +142,18 @@ class HouseInfoHandler(RequestHandler):
         if not ret:
             return self.write(dict(errno = RET.DBERR, errmsg = "数据库错误"))
         return self.write(dict(errno = RET.OK, errmsg = "OK", house_id = ret))
-        
+
     @utils.common.require_logined
     def get(self):
         uid = self.user_data.get("uid")
-        uid = self.get_argument("uid")
-        res = self.get_house_info(uid)
+        houseId = self.get_argument("house_id")
+        print("data: ", uid, houseId) # 1, 2
 
-        if not res:
-            return 
-        
-        res = json.loads(res[0])
+        results = self.get_house_info(houseId)
+        print("results: ", results)
+        if results:
+            print("ok")
+
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
         last_house_id = None
@@ -172,16 +171,19 @@ class HouseInfoHandler(RequestHandler):
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
         return last_house_id
 
-    def get_house_info(self, uid):
+    def get_house_info(self, houseId):
         datas = None
-        SQL = "select hi_facility from ih_house_info where hi_user_id = %s;"
+        SQL = "select x.hi_title, y.up_avatar, y.up_name, x.hi_address, x.hi_room_count, x.hi_acreage, \
+                x.hi_house_unit, x.hi_capacity, x.hi_beds, x.hi_deposit, x.hi_min_days, x.hi_max_days, \
+                x.hi_facility, x.hi_user_id from ih_house_info as x join ih_user_profile as y on x.hi_user_id = y.up_user_id \
+                where x.hi_house_id = %s;"
         with self.application.puredb.cursor() as cursor:
             try:
-                cursor.execute(SQL, uid)
-                datas = cursor.fetchone()
+                cursor.execute(SQL, houseId)
+                datas = cursor.fetchall()
             except Exception as e:
                 logging.error(e)
-                return self.write(dict(errno = RET.DBERR, errmsg = "mysql出错"))
+                return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
         return datas
 
 
