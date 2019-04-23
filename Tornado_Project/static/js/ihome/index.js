@@ -67,7 +67,7 @@ $(document).ready(function(){
         }
     }, "json");
     $.get("/api/house/index", function(data){
-        if ("0" == data.errcode) {
+        if ("0" == data.errno) {
             $(".swiper-wrapper").html(template("swiper-houses-tmpl", {houses:data.houses}));
             $(".area-list").html(template("area-list-tmpl", {areas:data.areas}));
             var mySwiper = new Swiper ('.swiper-container', {
