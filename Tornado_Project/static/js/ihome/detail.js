@@ -16,7 +16,7 @@ $(document).ready(function(){
     $.get("/api/house/info?house_id="+house_id, function (data) {
         if ("0" == data.errno) {
             $(".swiper-container").html(template("house-image-tmpl", {"img_urls":data.data.images, "price":data.data.price}));
-            $(".detail-con").html(template("house-detail-tmpl", {"house":data.data}));
+            $(".detail-con").html(template("house-detail-tmpl", {house:data.data}));
             var mySwiper = new Swiper ('.swiper-container', {
                 loop: true,
                 autoplay: 2000,
@@ -29,6 +29,9 @@ $(document).ready(function(){
                 $(".book-house").attr("href", "/booking.html?hid="+house_id);
                 $(".book-house").show();
             }
+        }
+        else if ("4101" == data.errno) {
+            location.href = "/login.html";
         }
     }, "json")
 })
