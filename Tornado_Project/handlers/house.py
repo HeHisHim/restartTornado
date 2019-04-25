@@ -168,9 +168,8 @@ class HouseInfoHandler(RequestHandler):
                 "min_days": results[11],
                 "max_days": results[12],
                 "facilities": json.loads(results[13]),
-                "comments": None
+                "comments": []
             }
-            print("data: ", house)
 
             return self.write(dict(errno = RET.OK, errmsg = "OK", data = house))
 
