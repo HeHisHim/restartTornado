@@ -147,10 +147,8 @@ class HouseInfoHandler(RequestHandler):
     def get(self):
         uid = self.user_data.get("uid")
         houseId = self.get_argument("house_id")
-        print("data: ", uid, houseId) # 1, 2
 
         results = self.get_house_info(houseId)
-        print("results: ", results)
         if results:
             house = {
                 "images": ["/static/images/home02.jpg", "/static/images/home01.jpg", "/static/images/home03.jpg"], 
@@ -168,10 +166,11 @@ class HouseInfoHandler(RequestHandler):
                 "min_days": results[11],
                 "max_days": results[12],
                 "facilities": json.loads(results[13]),
-                "comments": []
+                "comments": [],
+                "user_id": results[14]
             }
 
-            return self.write(dict(errno = RET.OK, errmsg = "OK", data = house))
+            return self.write(dict(errno = RET.OK, errmsg = "OK", data = house, user_id = uid))
 
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
