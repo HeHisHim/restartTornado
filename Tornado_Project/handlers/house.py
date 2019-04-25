@@ -152,7 +152,27 @@ class HouseInfoHandler(RequestHandler):
         results = self.get_house_info(houseId)
         print("results: ", results)
         if results:
-            print("ok")
+            house = {
+                "images": ["/static/images/home02.jpg", "/static/images/home01.jpg", "/static/images/home03.jpg"], 
+                "price": results[1],
+                "title": results[0],
+                "user_avatar": "/static/images/landlord01.jpg",
+                "user_name": results[3], 
+                "address": results[4],
+                "room_count": results[5],
+                "acreage": results[6],
+                "unit": results[7],
+                "capacity": results[8],
+                "beds": results[9],
+                "deposit": results[10],
+                "min_days": results[11],
+                "max_days": results[12],
+                "facilities": json.loads(results[13]),
+                "comments": None
+            }
+            print("data: ", house)
+
+            return self.write(dict(errno = RET.OK, errmsg = "OK", data = house))
 
 
     def set_house_info(self, uid, title, price, area_id, address, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days, facility):
@@ -173,14 +193,14 @@ class HouseInfoHandler(RequestHandler):
 
     def get_house_info(self, houseId):
         datas = None
-        SQL = "select x.hi_title, y.up_avatar, y.up_name, x.hi_address, x.hi_room_count, x.hi_acreage, \
+        SQL = "select x.hi_title, x.hi_price, y.up_avatar, y.up_name, x.hi_address, x.hi_room_count, x.hi_acreage, \
                 x.hi_house_unit, x.hi_capacity, x.hi_beds, x.hi_deposit, x.hi_min_days, x.hi_max_days, \
                 x.hi_facility, x.hi_user_id from ih_house_info as x join ih_user_profile as y on x.hi_user_id = y.up_user_id \
                 where x.hi_house_id = %s;"
         with self.application.puredb.cursor() as cursor:
             try:
                 cursor.execute(SQL, houseId)
-                datas = cursor.fetchall()
+                datas = cursor.fetchone()
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
