@@ -24,7 +24,7 @@ class ProfileHandler(RequestHandler):
         if not datas:
             return self.write(dict(errno = RET.SESSIONERR, errmsg = "用户不存在"))
         
-        return self.write(dict(errno = RET.OK, data = {"name": datas[0], "mobile": user_phone, "avatar": datas[1]} ,errmsg = "用户验证通过"))
+        return self.write(dict(errno = RET.OK, data = {"name": datas[0], "mobile": user_phone, "avatar": "/static/images/landlord01.jpg"} ,errmsg = "用户验证通过"))
     
     def get_user_data_FromMySQL(self, mobile):
         datas = None
