@@ -19,8 +19,10 @@ class ProfileHandler(RequestHandler):
     @utils.common.require_logined # 验证登录
     def get(self):
         user_phone = self.user_data.get("mobile")
+        logging.error(user_phone)
         datas = self.get_user_data_FromMySQL(user_phone)
-
+        logging.error(self.user_data)
+        logging.error(datas)
         if not datas:
             return self.write(dict(errno = RET.SESSIONERR, errmsg = "用户不存在"))
         
@@ -36,6 +38,8 @@ class ProfileHandler(RequestHandler):
             except Exception as e:
                 logging.error(e)
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql查询出错"))
+            else:
+                self.application.puredb.commit()
         return datas
 
 class NameHandler(RequestHandler):
