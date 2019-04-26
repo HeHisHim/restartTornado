@@ -239,8 +239,8 @@ class HouseListHandler(LogicBaseHandler):
                         "room_count": res[3],
                         "address": res[4],
                         "order_count": res[5],
-                        "avatar_url": res[6],
-                        "img_url": res[7],
+                        "avatar": "/static/images/landlord01.jpg",
+                        "image_url": "/static/images/home02.jpg"
                     }
                     resHouses.append(house)
 
