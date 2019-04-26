@@ -120,8 +120,10 @@ class RegisterHandler(RequestHandler):
                     uid = cursor.lastrowid
             except Exception as e:
                 logging.error(e)
-                conn.rollback()
+                await conn.rollback()
                 return self.write(dict(errno = RET.DBERR, errmsg = "mysql入库出错"))
+            else:
+                await conn.commit()
         return (datas, uid)
 
 class LoginHandler(RequestHandler):
