@@ -22,7 +22,7 @@ def get_current_user(handler):
             logging.error(e)
             return False
         if handler.user_data:
-            handler.user_data = json.loads(handler.user_data)
+            handler.user_data = json.loads(handler.user_data.decode("utf8"))
             return True
         else:
             return False
