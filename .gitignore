@@ -3,3 +3,4 @@ testmysql.py
 *.pyc
 */需求*
 */.DS_Store
+.vscode*
